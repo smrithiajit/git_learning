@@ -1,0 +1,110 @@
+---
+title: "Iris_data_analysis"
+author: "smrithi"
+date: "9/6/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Let's first install necessary packages. We can add more packages by separating them with commas
+
+```{r installpackages}
+install.packages(c("ggplot2"))
+
+library('ggplot2')
+
+```
+
+
+Download the iris data
+
+```{r irisdownload}
+# Download Iris dataset from UCI repository
+iris <- read.csv(url("http://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"),header=FALSE)
+
+#Assign column names to the dataset
+colnames(iris)<-c("sepal.length","sepal.width","petal.length","petal.width","species")
+
+# Save the data as a csv file
+
+write.csv(iris,'iris.csv')
+```
+
+Pre-process the iris data
+
+
+```{r iris_preprocess, echo=TRUE}
+
+#Read the data into the dataframe
+df=read.csv('/cloud/project/iris.csv')
+#Drop or omit nullvalues
+df1=na.omit(df)
+
+#OR
+
+df2=df1[!(is.na(df1$species) | df1$species==""),]
+
+write.csv(iris,'iris_processed.csv')
+```
+
+
+Perform an exploratory data analysis on iris data
+
+```{r iris_eda, echo=TRUE}
+
+
+#Read the data into the dataframe
+iris=read.csv('/cloud/project/iris_processed.csv')
+
+ggplot(iris, aes(x = petal.length, y = sepal.length, colour = species)) + 
+  geom_point() +
+  ggtitle('Iris Species by Petal and Sepal Length')
+
+cor(iris[, c('petal.length', 'sepal.length')])
+
+```
+
+
+
+Build ML model on iris data
+
+```{r iris_Mlmodeling, echo=TRUE}
+
+#Change the column 'Is.Versicolor' to a factor variable
+
+iris[['Is.Versicolor']] <- as.numeric(iris[['species']] == 'Iris-versicolor')
+
+#Apply linear ML model
+fit.lm <- lm(Is.Versicolor ~ petal.length + sepal.length, data = iris)
+
+
+#Get the summary of the model
+summary(fit.lm)
+
+
+#If the probability of prediction is greater than 0.5 the outcome is assigned 1, else 0
+iris[['Predict.Versicolor.lm']] <- as.numeric(predict(fit.lm) > 0.5)
+
+## Plot predicted vs. actual values( confusion matrix)
+
+table(iris[, c('Is.Versicolor', 'Predict.Versicolor.lm')])
+
+
+#Let's apply a generalized linear model
+fit.logit <- glm(Is.Versicolor ~ petal.length + sepal.length, data = iris,
+                 family = binomial(link = 'logit'))
+
+#Let's check out a summary of the model
+summary(fit.logit)
+
+```
+
